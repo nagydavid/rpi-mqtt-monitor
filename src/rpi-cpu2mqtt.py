@@ -12,6 +12,7 @@ import json
 import config
 import psutil
 from datetime import datetime
+from tzlocal import get_localzone
 from getmac import get_mac_address as gma
 
 hostname = socket.gethostname()
@@ -42,10 +43,13 @@ def check_sys_clock_speed():
 		return psutil.cpu_freq()[0]
 
 def check_uptime():
-	delta_time = time.time()-psutil.boot_time()
-	delta = time.gmtime(delta_time)
-	uptime = str(delta[2]-1) + "d " + str(delta[3]) + "h " + str(delta[4]) + "m"
-	return uptime
+    uptime = datetime.fromtimestamp(psutil.boot_time()).astimezone(get_localzone()).strftime('%Y-%m-%d %H:%M:%S%z')
+
+    uptime = "{0}:{1}".format(
+        uptime[:-2],
+        uptime[-2:]
+    )
+    return uptime
 
 def check_network_up():
     net_up = psutil.net_io_counters()[0]*10**-9
@@ -121,6 +125,7 @@ def config_json(what_config):
 			data["icon"] = "mdi:timer-outline"
 			data["name"] = hostname + " Uptime"
 			data["unit_of_measurement"] = ""
+			data["device_class"] = "timestamp"
 		elif what_config == "network_up":
 			data["icon"] = "mdi:upload-network"
 			data["name"] = hostname + " Network Upload"
